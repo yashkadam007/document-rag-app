@@ -1,13 +1,12 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 
 interface AuthFormProps {
   mode: "sign-in" | "sign-up"
@@ -15,13 +14,10 @@ interface AuthFormProps {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter()
-  const { signIn, signInLoading, signInError, signUp, signUpLoading, signUpError } = useAuth()
+  const { signIn, isLoading, error, signUp } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
-
-  const isLoading = mode === "sign-in" ? signInLoading : signUpLoading
-  const error = mode === "sign-in" ? signInError : signUpError
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +27,11 @@ export function AuthForm({ mode }: AuthFormProps) {
         { email, password },
         {
           onSuccess: () => router.push("/chats"),
+          onError: (error) => {
+            toast.error("Something went wrong", {
+              description: error.message
+            })
+          }
         },
       )
     } else {

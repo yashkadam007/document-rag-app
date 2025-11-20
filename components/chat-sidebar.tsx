@@ -1,16 +1,18 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+// Imports
+import { LogOut, Plus, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useChats } from "@/hooks/use-chats"
-import type { Chat } from "@/hooks/use-chats"
-import { useAuth } from "@/hooks/use-auth"
-import { Button } from "@/components/ui/button"
-import { Plus, LogOut, Trash2 } from "lucide-react"
+import { useState } from "react"
+
+// local imports
 import { FileUpload } from "@/components/file-upload"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/hooks/use-auth"
+import type { Chat } from "@/hooks/use-chats"
+import { useChats } from "@/hooks/use-chats"
+import { Sidebar, SidebarFooter, SidebarHeader } from "./ui/sidebar"
 
 export function ChatSidebar() {
   const pathname = usePathname()
@@ -38,14 +40,13 @@ export function ChatSidebar() {
   }
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen">
+    <Sidebar collapsible="offcanvas">
       {/* Header */}
-      <div className="p-4 border-b border-sidebar-border">
-        <Link href="/chats" className="flex items-center gap-2 font-bold text-lg">
-          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-primary-foreground">◆</div>
-          RAG Chat
+      <SidebarHeader>
+        <Link href="/chats" className="flex items-center justify-center gap-2 text-lg">
+          Doc Brown
         </Link>
-      </div>
+      </SidebarHeader>
 
       {/* New Chat Button */}
       <div className="p-4 border-b border-sidebar-border">
@@ -95,8 +96,8 @@ export function ChatSidebar() {
                 key={chat.id}
                 href={`/chats/${chat.id}`}
                 className={`flex items-center justify-between gap-2 px-3 py-2 rounded transition-colors ${isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent"
                   }`}
               >
                 <span className="flex-1 truncate text-sm">{chat.title}</span>
@@ -118,12 +119,12 @@ export function ChatSidebar() {
       )}
 
       {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border">
+      <SidebarFooter>
         <Button onClick={() => signOut()} variant="outline" className="w-full gap-2">
           <LogOut className="w-4 h-4" />
           Sign out
         </Button>
-      </div>
-    </div>
+      </SidebarFooter>
+    </Sidebar>
   )
 }

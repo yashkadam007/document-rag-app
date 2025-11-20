@@ -1,9 +1,11 @@
 "use client"
 
-import type React from "react"
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+// Imports
+import { redirect } from "next/navigation"
+
+// local imports
 import { ChatSidebar } from "@/components/chat-sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function ChatsLayout({
@@ -11,22 +13,29 @@ export default function ChatsLayout({
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
   const { user, isLoading } = useAuth()
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace("/sign-in")
-    }
-  }, [isLoading, user, router])
-
-  if (isLoading || !user) {
-    return null
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+  if (!user) {
+    redirect("/sign-in")
   }
   return (
-    <div className="flex h-screen">
+    <SidebarProvider defaultOpen
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
       <ChatSidebar />
-      <div className="flex-1 flex flex-col">{children}</div>
-    </div>
+      <SidebarInset>
+        <main className="flex flex-1 flex-col p-2">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

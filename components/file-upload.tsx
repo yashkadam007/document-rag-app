@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useRef, useState } from "react"
 import { useDocuments } from "@/hooks/use-documents"
 import { Button } from "@/components/ui/button"
@@ -53,9 +51,8 @@ export function FileUpload({ chatId }: FileUploadProps) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-          isDragging ? "border-primary bg-primary/10" : "border-border"
-        }`}
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging ? "border-primary bg-primary/10" : "border-border"
+          }`}
       >
         <input
           ref={fileInputRef}

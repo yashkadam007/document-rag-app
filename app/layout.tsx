@@ -1,10 +1,12 @@
-import type React from "react"
+// Imports
 import type { Metadata } from "next"
+
+// local imports
 import { Providers } from "./_providers"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "RAG Chat",
+  title: "Doc Brown",
   description: "Retrieval-Augmented Generation Chat Application",
   generator: 'v0.app'
 }
