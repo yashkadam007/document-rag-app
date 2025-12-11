@@ -1,2 +1,2 @@
 - [ ] Handle toasts
-- [ ] Add favicon
+- [x] Add favicon
