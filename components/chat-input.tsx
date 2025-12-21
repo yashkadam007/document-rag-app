@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Send } from "lucide-react"
 
 interface ChatInputProps {
@@ -22,14 +23,14 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
 
   return (
     <form onSubmit={handleSubmit} className="p-6 border-t border-border bg-background">
-      <div className="flex gap-3 max-w-4xl mx-auto">
-        <input
+      <div className="flex items-center gap-3 max-w-4xl mx-auto">
+        <Input
           type="text"
           placeholder="Ask a question..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={isLoading}
-          className="flex-1 px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+          className="flex-1 h-9"
         />
         <Button type="submit" disabled={isLoading || !input.trim()} size="icon">
           <Send className="w-4 h-4" />
