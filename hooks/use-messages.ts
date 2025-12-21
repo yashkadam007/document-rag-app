@@ -9,12 +9,24 @@ export interface Message {
   chat_id: string
   role: "user" | "assistant" | "system" | "tool"
   content: string
-  created_at: string
+  /**
+   * Backend returns `createdAt` as epoch seconds. We keep this flexible to be
+   * resilient to older payloads or different formats.
+   */
+  created_at: number | string | null
 }
 
 export interface AskResponse {
   answer: string
   sources: Array<{ filename: string; chunkId: string }>
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+function isMessageRole(value: unknown): value is Message["role"] {
+  return value === "user" || value === "assistant" || value === "system" || value === "tool"
 }
 
 export function useMessages(chatId: string) {
@@ -25,17 +37,27 @@ export function useMessages(chatId: string) {
     queryFn: async () => {
       const { data } = await api.get<unknown>(`/chats/${chatId}/messages`)
       if (Array.isArray(data)) {
-        return data
-          .filter((m): m is { id: string; role: string; content: string; createdAt?: unknown } =>
-            !!m && typeof (m as any).id === "string" && typeof (m as any).content === "string",
-          )
-          .map((m) => ({
-            id: (m as any).id,
+        const parsed: Message[] = []
+        for (const item of data) {
+          if (!isRecord(item)) continue
+
+          const id = typeof item.id === "string" ? item.id : null
+          const content = typeof item.content === "string" ? item.content : null
+          if (!id || !content) continue
+
+          const role = isMessageRole(item.role) ? item.role : "assistant"
+          const createdAt =
+            typeof item.createdAt === "number" || typeof item.createdAt === "string" ? item.createdAt : null
+
+          parsed.push({
+            id,
             chat_id: String(chatId),
-            role: ((m as any).role as any) ?? "assistant",
-            content: (m as any).content,
-            created_at: String((m as any).createdAt ?? ""),
-          }))
+            role,
+            content,
+            created_at: createdAt,
+          })
+        }
+        return parsed
       }
       return []
     },
