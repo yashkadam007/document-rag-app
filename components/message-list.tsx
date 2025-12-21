@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 interface MessageListProps {
   messages: Message[]
   isLoading: boolean
+  isTyping?: boolean
 }
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -49,7 +50,7 @@ function formatMessageTime(createdAt: Message["created_at"]): string | null {
   return timeFormatter.format(d)
 }
 
-export function MessageList({ messages, isLoading }: MessageListProps) {
+export function MessageList({ messages, isLoading, isTyping = false }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastMessageId = messages[messages.length - 1]?.id
 
@@ -76,10 +77,10 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
         <MessageRow key={message.id} message={message} />
       ))}
 
-      {isLoading && (
+      {(isLoading || isTyping) && (
         <div className="flex justify-start">
           <div className="bg-muted text-foreground px-4 py-3 rounded-lg border border-border/50">
-            <div className="flex gap-2" aria-label="Loading messages">
+            <div className="flex gap-2" aria-label={isLoading ? "Loading messages" : "Assistant is typing"}>
               <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
               <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
               <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />

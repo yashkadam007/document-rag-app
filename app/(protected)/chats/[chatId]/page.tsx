@@ -39,7 +39,7 @@ export default function ChatPage() {
           </Card>
         </div>
       )}
-      <MessageList messages={messages} isLoading={isLoading} />
+      <MessageList messages={messages} isLoading={isLoading} isTyping={sendMessageLoading} />
       <ChatInput onSendMessage={sendMessage} isLoading={sendMessageLoading} />
     </div>
   )

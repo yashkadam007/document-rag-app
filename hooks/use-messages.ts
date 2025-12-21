@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
+import { toast } from "sonner"
 
 export interface Message {
   id: string
@@ -29,11 +30,17 @@ function isMessageRole(value: unknown): value is Message["role"] {
   return value === "user" || value === "assistant" || value === "system" || value === "tool"
 }
 
+function createClientId(prefix: string) {
+  const uuid = globalThis.crypto?.randomUUID?.()
+  return `${prefix}-${uuid ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`}`
+}
+
 export function useMessages(chatId: string) {
   const queryClient = useQueryClient()
+  const messagesQueryKey = queryKeys.chats.messages(chatId)
 
   const { data: messages = [], isLoading, error } = useQuery<Message[]>({
-    queryKey: queryKeys.chats.messages(chatId),
+    queryKey: messagesQueryKey,
     queryFn: async () => {
       const { data } = await api.get<unknown>(`/chats/${chatId}/messages`)
       if (Array.isArray(data)) {
@@ -67,10 +74,48 @@ export function useMessages(chatId: string) {
 
   const sendMutation = useMutation({
     mutationFn: async (content: string) => {
-      await api.post<AskResponse>(`/chats/${chatId}/ask`, { q: content })
+      const { data } = await api.post<AskResponse>(`/chats/${chatId}/ask`, { q: content })
+      return data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.chats.messages(chatId) })
+    onMutate: async (content: string) => {
+      const trimmed = content.trim()
+      if (!trimmed) return null
+
+      await queryClient.cancelQueries({ queryKey: messagesQueryKey })
+      const previous = queryClient.getQueryData<Message[]>(messagesQueryKey)
+
+      const optimisticUserMessage: Message = {
+        id: createClientId("user"),
+        chat_id: String(chatId),
+        role: "user",
+        content: trimmed,
+        created_at: Date.now(),
+      }
+
+      queryClient.setQueryData<Message[]>(messagesQueryKey, (old = []) => [...old, optimisticUserMessage])
+
+      return { previous }
+    },
+    onSuccess: (data) => {
+      if (data?.answer) {
+        const optimisticAssistantMessage: Message = {
+          id: createClientId("assistant"),
+          chat_id: String(chatId),
+          role: "assistant",
+          content: data.answer,
+          created_at: Date.now(),
+        }
+        queryClient.setQueryData<Message[]>(messagesQueryKey, (old = []) => [...old, optimisticAssistantMessage])
+      }
+
+      // Reconcile with server IDs + timestamps in the background.
+      queryClient.invalidateQueries({ queryKey: messagesQueryKey })
+    },
+    onError: (err) => {
+      // `/ask` can fail after the user message is already persisted server-side (e.g. model error),
+      // so keep the optimistic user message and refetch to reconcile server state.
+      toast.error(err instanceof Error ? err.message : "Failed to get an answer. Your message was sent.")
+      queryClient.invalidateQueries({ queryKey: messagesQueryKey })
     },
   })
 
