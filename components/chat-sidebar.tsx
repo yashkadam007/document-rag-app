@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 
 // local imports
-import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import type { Chat } from "@/hooks/use-chats"
@@ -111,12 +110,6 @@ export function ChatSidebar() {
             )
           })}
       </div>
-
-      {pathname.startsWith("/chats/") && (
-        <div className="p-4 border-t border-sidebar-border">
-          <FileUpload chatId={pathname.split("/")[2]} />
-        </div>
-      )}
 
       {/* Footer */}
       <SidebarFooter>
