@@ -1,11 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { getApiErrorMessage } from "@/lib/api-error"
 import { toast } from "sonner"
 
 interface AuthFormProps {
@@ -14,33 +17,36 @@ interface AuthFormProps {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter()
-  const { signIn, isLoading, error, signUp } = useAuth()
+  const { signIn, signInLoading, signUp, signUpLoading } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isSubmitting = mode === "sign-in" ? signInLoading : signUpLoading
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError(null)
 
     if (mode === "sign-in") {
-      signIn(
-        { email, password },
-        {
-          onSuccess: () => router.push("/chats"),
-          onError: (error) => {
-            toast.error("Something went wrong", {
-              description: error.message
-            })
-          }
-        },
-      )
+      try {
+        await signIn({ email, password })
+        router.push("/chats")
+      } catch (err) {
+        const message = getApiErrorMessage(err)
+        setSubmitError(message)
+        toast.error("Sign in failed", { description: message })
+      }
     } else {
-      signUp(
-        { email, password, name },
-        {
-          onSuccess: () => router.push("/chats"),
-        },
-      )
+      try {
+        await signUp({ email, password, name })
+        router.push("/chats")
+      } catch (err) {
+        const message = getApiErrorMessage(err)
+        setSubmitError(message)
+        toast.error("Sign up failed", { description: message })
+      }
     }
   }
 
@@ -62,7 +68,12 @@ export function AuthForm({ mode }: AuthFormProps) {
               type="text"
               placeholder="Your name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value)
+                if (submitError) setSubmitError(null)
+              }}
+              autoComplete="name"
+              disabled={isSubmitting}
             />
           </div>
         )}
@@ -74,8 +85,13 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="email"
             placeholder="you@example.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              if (submitError) setSubmitError(null)
+            }}
             required
+            autoComplete="email"
+            disabled={isSubmitting}
           />
         </div>
 
@@ -86,19 +102,25 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="password"
             placeholder="••••••••"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value)
+              if (submitError) setSubmitError(null)
+            }}
             required
+            autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+            disabled={isSubmitting}
           />
         </div>
 
-        {error && (
-          <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-            {error instanceof Error ? error.message : "An error occurred"}
-          </div>
+        {submitError && (
+          <Alert variant="destructive">
+            <AlertTitle>{mode === "sign-in" ? "Couldn’t sign you in" : "Couldn’t create your account"}</AlertTitle>
+            <AlertDescription className="whitespace-pre-line">{submitError}</AlertDescription>
+          </Alert>
         )}
 
-        <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? "Loading..." : mode === "sign-in" ? "Sign in" : "Sign up"}
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? "Loading..." : mode === "sign-in" ? "Sign in" : "Sign up"}
         </Button>
       </form>
 
@@ -106,16 +128,16 @@ export function AuthForm({ mode }: AuthFormProps) {
         {mode === "sign-in" ? (
           <>
             Don't have an account?{" "}
-            <a href="/sign-up" className="text-primary hover:underline">
+            <Link href="/sign-up" className="text-primary hover:underline">
               Sign up
-            </a>
+            </Link>
           </>
         ) : (
           <>
             Already have an account?{" "}
-            <a href="/sign-in" className="text-primary hover:underline">
+            <Link href="/sign-in" className="text-primary hover:underline">
               Sign in
-            </a>
+            </Link>
           </>
         )}
       </div>

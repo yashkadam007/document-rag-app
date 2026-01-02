@@ -72,7 +72,13 @@ export function useAuth() {
     isLoading,
     error,
     signUp: signUpMutation.mutateAsync,
+    signUpLoading: signUpMutation.isPending,
+    signUpError: signUpMutation.error,
     signIn: signInMutation.mutateAsync,
+    signInLoading: signInMutation.isPending,
+    signInError: signInMutation.error,
     signOut: signOutMutation.mutateAsync,
+    signOutLoading: signOutMutation.isPending,
+    signOutError: signOutMutation.error,
   }
 }
