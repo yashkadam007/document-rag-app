@@ -3,8 +3,10 @@
 import { useId, useRef, useState } from "react"
 import { useDocuments } from "@/hooks/use-documents"
 import { Button } from "@/components/ui/button"
-import { Upload, X, File } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
+import { Upload, X, File, Loader2 } from "lucide-react"
 import { formatFileSize } from "@/lib/utils"
+import { getApiErrorMessage } from "@/lib/api-error"
 
 interface FileUploadProps {
   chatId: string
@@ -14,7 +16,19 @@ export function FileUpload({ chatId }: FileUploadProps) {
   const fileInputId = useId()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const { documents, uploadDocument, uploadDocumentLoading, uploadDocumentError, deleteDocument } = useDocuments(chatId)
+  const { 
+    documents, 
+    uploadDocument, 
+    uploadDocumentLoading, 
+    uploadDocumentError,
+    uploadProgress,
+    cancelUpload,
+    deleteDocument 
+  } = useDocuments(chatId)
+  
+  // Determine upload state for UI
+  const isUploading = uploadDocumentLoading && uploadProgress !== null
+  const isProcessing = uploadDocumentLoading && uploadProgress !== null && uploadProgress.percent === 100
 
   const handleFileSelect = (file: File) => {
     uploadDocument(file)
@@ -69,9 +83,49 @@ export function FileUpload({ chatId }: FileUploadProps) {
         </Button>
       </div>
 
+      {/* Upload Progress */}
+      {isUploading && (
+        <div className="p-4 bg-accent/50 rounded-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {isProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              ) : (
+                <Upload className="w-4 h-4 text-primary" />
+              )}
+              <span className="text-sm font-medium">
+                {isProcessing 
+                  ? "Processing document…" 
+                  : uploadProgress.percent !== undefined 
+                    ? `Uploading ${uploadProgress.percent}%`
+                    : "Uploading…"
+                }
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={cancelUpload}
+              className="h-7 px-2 text-muted-foreground hover:text-destructive"
+            >
+              Cancel
+            </Button>
+          </div>
+          <Progress 
+            value={isProcessing ? 100 : (uploadProgress.percent ?? 0)} 
+            className={isProcessing ? "animate-pulse" : ""}
+          />
+          {uploadProgress.total !== undefined && (
+            <p className="text-xs text-muted-foreground">
+              {formatFileSize(uploadProgress.loaded)} of {formatFileSize(uploadProgress.total)}
+            </p>
+          )}
+        </div>
+      )}
+
       {uploadDocumentError && (
         <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-          {uploadDocumentError instanceof Error ? uploadDocumentError.message : "Failed to upload file"}
+          {getApiErrorMessage(uploadDocumentError)}
         </div>
       )}
 
