@@ -1,26 +1,40 @@
 "use client"
 
-import { useChats } from "@/hooks/use-chats"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { MessageSquare } from "lucide-react"
+
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { useChats } from "@/hooks/use-chats"
 
 export default function ChatsPage() {
   const router = useRouter()
-  const { chats } = useChats()
+  const { chats, isLoading } = useChats()
 
   useEffect(() => {
-    const first = chats.find((c) => c && typeof (c as any).id === "string")
-    if (first) {
-      router.push(`/chats/${first.id}`)
+    // Redirect to first chat if available
+    const firstChat = chats[0]
+    if (firstChat?.id) {
+      router.replace(`/chats/${firstChat.id}`)
     }
   }, [chats, router])
 
+  // Show nothing while loading or if we're about to redirect
+  if (isLoading || chats.length > 0) {
+    return null
+  }
+
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-2">No chats yet</h1>
-        <p className="text-muted-foreground">Create a new chat to get started</p>
-      </div>
-    </div>
+    <Empty className="flex-1">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <MessageSquare aria-hidden="true" />
+        </EmptyMedia>
+        <EmptyTitle>No chats yet</EmptyTitle>
+        <EmptyDescription>
+          Create a new chat from the sidebar to get started.
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   )
 }

@@ -2,52 +2,12 @@
 
 import { useEffect, useRef } from "react"
 import type { Message } from "@/hooks/use-messages"
-import { cn } from "@/lib/utils"
+import { cn, formatTime } from "@/lib/utils"
 
 interface MessageListProps {
   messages: Message[]
   isLoading: boolean
   isTyping?: boolean
-}
-
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-  hour: "2-digit",
-  minute: "2-digit",
-})
-
-function parseMessageDate(createdAt: Message["created_at"]): Date | null {
-  if (createdAt === null || createdAt === undefined) return null
-
-  if (typeof createdAt === "number") {
-    if (!Number.isFinite(createdAt) || createdAt <= 0) return null
-    const ms = createdAt < 1_000_000_000_000 ? createdAt * 1000 : createdAt
-    const d = new Date(ms)
-    return Number.isNaN(d.getTime()) ? null : d
-  }
-
-  if (typeof createdAt === "string") {
-    const v = createdAt.trim()
-    if (!v) return null
-
-    if (/^\d+$/.test(v)) {
-      const n = Number(v)
-      if (!Number.isFinite(n) || n <= 0) return null
-      const ms = v.length <= 10 ? n * 1000 : n
-      const d = new Date(ms)
-      return Number.isNaN(d.getTime()) ? null : d
-    }
-
-    const d = new Date(v)
-    return Number.isNaN(d.getTime()) ? null : d
-  }
-
-  return null
-}
-
-function formatMessageTime(createdAt: Message["created_at"]): string | null {
-  const d = parseMessageDate(createdAt)
-  if (!d) return null
-  return timeFormatter.format(d)
 }
 
 export function MessageList({ messages, isLoading, isTyping = false }: MessageListProps) {
@@ -95,7 +55,7 @@ export function MessageList({ messages, isLoading, isTyping = false }: MessageLi
 }
 
 function MessageRow({ message }: { message: Message }) {
-  const time = formatMessageTime(message.created_at)
+  const time = formatTime(message.created_at)
   const isUser = message.role === "user"
   const isSystemOrTool = message.role === "system" || message.role === "tool"
 

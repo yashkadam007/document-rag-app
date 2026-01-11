@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { queryKeys } from "@/lib/query-keys"
+import { isRecord, coerceString } from "@/lib/utils"
 
 export interface Document {
   id: string
@@ -10,6 +11,28 @@ export interface Document {
   filename: string
   size: number
   created_at: string
+}
+
+/**
+ * Type guard for raw document objects from the API.
+ */
+function isRawDocument(value: unknown): value is { id: string; filename: string; sizeBytes?: unknown; createdAt?: unknown } {
+  if (!isRecord(value)) return false
+  return typeof value.id === "string" && typeof value.filename === "string"
+}
+
+/**
+ * Normalizes a raw document object to the Document interface.
+ */
+function normalizeDocument(raw: { id: string; filename: string; sizeBytes?: unknown; createdAt?: unknown }, chatId: string): Document {
+  const size = typeof raw.sizeBytes === "number" ? raw.sizeBytes : 0
+  return {
+    id: raw.id,
+    chat_id: chatId,
+    filename: raw.filename,
+    size: Number.isFinite(size) ? size : 0,
+    created_at: coerceString(raw.createdAt) ?? "",
+  }
 }
 
 export function useDocuments(chatId: string) {
@@ -20,17 +43,7 @@ export function useDocuments(chatId: string) {
     queryFn: async () => {
       const { data } = await api.get<unknown>(`/chats/${chatId}/documents`)
       if (Array.isArray(data)) {
-        return data
-          .filter((d): d is { id: string; filename: string; sizeBytes?: number; createdAt?: unknown } =>
-            !!d && typeof (d as any).id === "string" && typeof (d as any).filename === "string",
-          )
-          .map((d) => ({
-            id: (d as any).id,
-            chat_id: String(chatId),
-            filename: (d as any).filename,
-            size: Number((d as any).sizeBytes ?? 0),
-            created_at: String((d as any).createdAt ?? ""),
-          }))
+        return data.filter(isRawDocument).map((d) => normalizeDocument(d, chatId))
       }
       return []
     },

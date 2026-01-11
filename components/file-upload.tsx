@@ -1,15 +1,17 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useId, useRef, useState } from "react"
 import { useDocuments } from "@/hooks/use-documents"
 import { Button } from "@/components/ui/button"
 import { Upload, X, File } from "lucide-react"
+import { formatFileSize } from "@/lib/utils"
 
 interface FileUploadProps {
   chatId: string
 }
 
 export function FileUpload({ chatId }: FileUploadProps) {
+  const fileInputId = useId()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const { documents, uploadDocument, uploadDocumentLoading, uploadDocumentError, deleteDocument } = useDocuments(chatId)
@@ -36,14 +38,6 @@ export function FileUpload({ chatId }: FileUploadProps) {
     }
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
-  }
-
   return (
     <div className="space-y-4">
       {/* Upload Area */}
@@ -55,8 +49,10 @@ export function FileUpload({ chatId }: FileUploadProps) {
           }`}
       >
         <input
+          id={fileInputId}
           ref={fileInputRef}
           type="file"
+          aria-label="Upload document file"
           onChange={(e) => {
             if (e.target.files?.[0]) {
               handleFileSelect(e.target.files[0])
@@ -94,10 +90,12 @@ export function FileUpload({ chatId }: FileUploadProps) {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => deleteDocument(doc.id)}
                   className="p-1 hover:bg-destructive/20 rounded flex-shrink-0"
+                  aria-label={`Delete ${doc.filename}`}
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             ))}
